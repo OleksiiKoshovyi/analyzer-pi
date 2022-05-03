@@ -23,16 +23,26 @@ from daqhats_utils import select_hat_device, enum_mask_to_string, \
     input_mode_to_string, input_range_to_string
 from datetime import datetime
 import csv
+import json
 
 # Constants
 CURSOR_BACK_2 = '\x1b[2D'
 ERASE_TO_END_OF_LINE = '\x1b[0K'
 
 
+def configure_script():
+    with open('./config.sampling.json', encoding='utf-8', mode='r') as config_file:
+        config = json.load(config_file)
+        channels = config['channels']
+        duration = config['duration']
+        interval = config['interval']
+        return channels, duration, interval
+
 def main():
     """
     This function is executed automatically when the module is run directly.
     """
+    channels, duration, interval = configure_script()
     options = OptionFlags.DEFAULT
     low_chan = 0
     high_chan = 3
@@ -41,7 +51,7 @@ def main():
     input_range = AnalogInputRange.BIP_10V
 
     mcc_128_num_channels = mcc128.info().NUM_AI_CHANNELS[input_mode]
-    sample_interval = 0.5  # Seconds
+    sample_interval = interval  # Seconds
 
     try:
         # Ensure low_chan and high_chan are valid.
@@ -73,6 +83,7 @@ def main():
         print('    Input mode: ', input_mode_to_string(input_mode))
         print('    Input range: ', input_range_to_string(input_range))
         print('    Channels: {0:d} - {1:d}'.format(low_chan, high_chan))
+        print('    Selected channels: {}'.format(channels))
         print('    Options:', enum_mask_to_string(OptionFlags, options))
         try:
             input("\nPress 'Enter' to continue")
@@ -94,13 +105,15 @@ def main():
                 writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
                 writer.writeheader()
                 samples = [{}] * channel_count
-                while True:
+                start_time = datetime.now().timestamp()
+                end_time = start_time + duration
+                while datetime.now().timestamp() < end_time:
                     # Display the updated samples per channel count
                     samples_per_channel += 1
                     print('{:17}'.format(samples_per_channel))
 
                     # Read a single value from each selected channel.
-                    for chan in range(low_chan, high_chan + 1):
+                    for chan in channels:
                         value = hat.a_in_read(chan, options)
                         time = str(datetime.now().timestamp())
                         samples[chan] = {'date': time, 'channel': chan, 'sample': value}

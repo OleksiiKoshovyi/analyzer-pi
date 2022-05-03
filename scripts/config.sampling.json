@@ -1,0 +1,5 @@
+{
+    "channels": [0, 1, 2, 3],
+    "duration": 30,
+    "interval": 0.5
+}
