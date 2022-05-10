@@ -22,6 +22,7 @@ from daqhats import mcc128, OptionFlags, HatIDs, HatError, AnalogInputMode, \
 from daqhats_utils import select_hat_device, enum_mask_to_string, \
     input_mode_to_string, input_range_to_string
 from datetime import datetime
+import csv
 import json
 
 # Constants
@@ -35,16 +36,18 @@ def configure_script():
         channels = config['channels']
         duration = config['duration']
         interval = config['interval']
-        return channels, duration, interval
+        output_config = config['output_config']
+        return channels, duration, interval, output_config
 
 def main():
     """
     This function is executed automatically when the module is run directly.
     """
-    channels, duration, interval = configure_script()
+    channels, duration, interval, output_config = configure_script()
     options = OptionFlags.DEFAULT
     low_chan = 0
     high_chan = 3
+    channel_count = len(channels)
     input_mode = AnalogInputMode.SE
     input_range = AnalogInputRange.BIP_10V
 
@@ -91,27 +94,42 @@ def main():
         print('\nAcquiring data ... Press Ctrl-C to abort')
 
         # Display the header row for the data table.
-        print('\n  Date			    Channel  Sample')
+        print('\nSample')
 
         try:
             samples_per_channel = 0
-            start_time = datetime.now().timestamp()
-            end_time = start_time + duration
-            while datetime.now().timestamp() < end_time:
-                # Display the updated samples per channel count
-                samples_per_channel += 1
-                print('{:17}'.format(samples_per_channel))
+            time = str(datetime.now().timestamp())
+            file_name = 'samples/voltage-{}.csv'.format(time)
+            fieldnames = ['date', 'channel', 'sample']
+            with open(file_name, 'w', newline='') as csv_file:
+                print('new file created: {}'.format(file_name))
+                writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+                writer.writeheader()
+                samples = [{}] * channel_count
+                start_time = datetime.now().timestamp()
+                end_time = start_time + duration
+                while datetime.now().timestamp() < end_time:
+                    # Display the updated samples per channel count
+                    samples_per_channel += 1
+                    print('{:17}'.format(samples_per_channel))
 
-                # Read a single value from each selected channel.
-                for chan in channels:
-                    value = hat.a_in_read(chan, options)
-                    time = str(datetime.now())
-                    print('{:>}. Ch: {}. {:12.7} V'.format(time, chan, value))
+                    # Read a single value from each selected channel.
+                    for id, chan in enumerate(channels):
+                        value = hat.a_in_read(chan, options)
+                        time = str(datetime.now().timestamp())
+                        samples[id] = {'date': time, 'channel': chan, 'sample': value}
 
-                stdout.flush()
+                    stdout.flush()
+                    # Save in csv
+                    if output_config['save_result_in_csv']:
+                        writer.writerows(samples)
+                    # Print in console
+                    if output_config['print_result']:
+                        for sample in samples:
+                            print('{:>}. Ch: {}. {:12.7} V'.format(sample['date'], sample['channel'], sample['sample']))
 
-                # Wait the specified interval between reads.
-                sleep(sample_interval)
+                    # Wait the specified interval between reads.
+                    sleep(sample_interval)
 
         except KeyboardInterrupt:
             # Clear the '^C' from the display.
