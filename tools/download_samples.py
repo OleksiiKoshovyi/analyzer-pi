@@ -4,7 +4,7 @@ import click
 
 
 def main():
-    print('You are going to upload scripts to raspberry-pi.')
+    print('You are going to download scripts from raspberry-pi.')
     if not click.confirm('It may replace old files. Continue?', default=True):
         return
 
@@ -13,10 +13,10 @@ def main():
         user = config['user']
         host = config['host']
         connection = f'{user}@{host}:'
-        subprocess.run( ["scp", "-P", "22",
-            "../scripts/*.*",
-            connection + "daqhats/examples/python/mcc128/"],
-            check=True)
+        subprocess.run( ["scp", "-r", "-P", "22",
+            connection + "daqhats/examples/python/mcc128/samples",
+            "../scripts/"],
+            check=True )
 
 if __name__ == '__main__':
     # This will only be run when the module is called directly.

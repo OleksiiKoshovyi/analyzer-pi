@@ -1,5 +1,10 @@
 {
-    "channels": [0, 1, 2, 3],
-    "duration": 30,
-    "interval": 0.5
+    "channels": [2],
+    "duration": 0.1,
+    "interval": 0.0002,
+    "output_sources":
+    {
+        "console": false,
+        "csv": true
+    }
 }
