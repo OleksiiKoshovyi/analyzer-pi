@@ -37,15 +37,33 @@ ERASE_TO_END_OF_LINE = '\x1b[0K'
 def get_config():
     with open('./config.sampling.json', encoding='utf-8', mode='r') as config_file:
         config = json.load(config_file, object_hook=lambda d: SimpleNamespace(**d))
+        channels = config.channels
+        if len(channels) == 0:
+            raise Exception('You didn\'t select any channel in config')
         return config
+
+def get_sampling_delay(hat, options, config):
+    trial_count = 10
+    channels = config.channels
+    start_time = datetime.now().timestamp()
+    for _ in range(trial_count):
+        # Read a single value from each selected channel.
+        for chan in channels:
+            value = hat.a_in_read(chan, options)
+            time = str(datetime.now().timestamp())
+    end_time = datetime.now().timestamp()
+    duration = end_time - start_time
+    sampling_delay = duration / trial_count
+    print('Sampling delay per channel set: ', sampling_delay)
+    return sampling_delay
 
 def sample_voltage(hat, options, config):
     duration = config.duration
     sample_interval = config.interval
+    sampling_delay = get_sampling_delay(hat, options, config)
+    sample_interval = max(0, sample_interval - sampling_delay)
+    print('New sampling interval:', sample_interval)
     channels = config.channels
-    if len(channels) == 0:
-        print('You didn\'t select any channel in config')
-        return []
     start_time = datetime.now().timestamp()
     end_time = start_time + duration
     samples = []
