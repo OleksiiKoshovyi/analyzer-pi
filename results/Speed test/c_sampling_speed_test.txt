@@ -1,0 +1,20 @@
+    Raspberry pi 3
+Sampling speed test
+
+
+One iteration of sampling costs t = 
+Hence, maximal frequency f = 1 / t = 
+
+    Raspberry pi 4
+Sampling speed test
+Total samples read: 100000
+Time spent: 100.242352
+Time per iteration: 0.001002
+Frequency: 997.582339
+
+One iteration of sampling costs t = 0.001002 s
+Hence, maximal frequency f = 1 / t = 997.582 Hz = 0.997582 kHz
+
+t1 = 50.1 C
+t2 = 56.0 C
+dt = 5.9 C
